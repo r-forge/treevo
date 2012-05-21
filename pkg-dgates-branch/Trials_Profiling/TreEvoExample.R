@@ -23,7 +23,7 @@ char<-convertTaxonFrameToGeigerData(
 summaryStatsLong(phy, char)
 
 #ABC run on simulated phylogeny and characters
-Rprof('doRun.out')
+Rprof('doRun_2.out')
 a<-doRun(
 	phy = phy,
 	traits = char,
@@ -38,7 +38,7 @@ a<-doRun(
 	TreeYears=1000,
 	standardDevFactor=0.2, 	
 	plot=F,
-	StartSims=10, #number of initial simulations
+	StartSims=100, #number of initial simulations
 	epsilonProportion=0.5, #What proportion of initial particles to keep
 	epsilonMultiplier=0.5, #What proportion of particles to keep for subsequent generations
 	nStepsPRC=5, #number of generations
@@ -46,9 +46,9 @@ a<-doRun(
 	numParticles=100, #how many accepted particles to keep for each generation
 	debug=F,
 	whenToKill=20,
-	jobName=6,
-	stopRule=T,
-	multicore=T, #initial sims (ie StartSims) are set up to be multithreaded if T
+	jobName=4,
+	stopRule=F,
+	multicore=F, #initial sims (ie StartSims) are set up to be multithreaded if T
 	coreLimit=10 
 )
 Rprof(NULL)
