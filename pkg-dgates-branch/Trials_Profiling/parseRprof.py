@@ -37,9 +37,9 @@ class FuncCall():
         """write columnar output, with different levels of indentation for sucessively deeper func calls"""
         sys.stdout.write('%.5f%10d%10.5f%10d  ' % (self.count / float(tot), self.count, self.terminal_count / float(tot), self.terminal_count))
         for i in range(0, lvl):
-            sys.stdout.write('  ')
+            sys.stdout.write('| ')
         sys.stdout.write('%s\n' % (self.name))
-        for child in sorted(self.children.values(), key=lambda c:c.count, reverse=True):
+        for child in sorted(list(self.children.values()), key=lambda c:c.count, reverse=True):
             child.output(lvl + 1, tot)
    
 
@@ -51,7 +51,7 @@ tot_samples = len(samples)
 
 toplevel = FuncCall('toplevel')
 for samp in samples[1:]:
-    toplevel.add_children(samp[-1:0:-1])
+    toplevel.add_children(reversed(samp))
 
 sys.stdout.write('%7s%10s%10s%10s  %s\n' % ('tot%', 'tot#', 'self%', 'self#', 'function'))
 #output= '/home/brightuser/Desktop/R_hierarchy'
