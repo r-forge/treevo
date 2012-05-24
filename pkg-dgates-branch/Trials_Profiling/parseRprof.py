@@ -51,7 +51,8 @@ tot_samples = len(samples)
 
 toplevel = FuncCall('toplevel')
 for samp in samples[1:]:
-    toplevel.add_children(reversed(samp))
+    samp.reverse()
+    toplevel.add_children(samp)
 
 sys.stdout.write('%7s%10s%10s%10s  %s\n' % ('tot%', 'tot#', 'self%', 'self#', 'function'))
 #output= '/home/brightuser/Desktop/R_hierarchy'
