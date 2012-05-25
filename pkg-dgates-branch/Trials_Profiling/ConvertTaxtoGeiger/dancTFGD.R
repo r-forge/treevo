@@ -1,5 +1,5 @@
 library(TreEvo)
-phy<-rcoal(200)
+phy<-rcoal(20)
 splits<-getSimulationSplits(phy)
 phy$edge.length<-phy$edge.length/max(branching.times(phy))
 taxframe<-doSimulation(
