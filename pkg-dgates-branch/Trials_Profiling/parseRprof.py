@@ -29,7 +29,7 @@ class FuncCall():
             if len(child_list) > 1:
                 self.children[child_list[0]].add_children(child_list[1:])
             else:
-                self.terminal_count += 1
+                self.children[child_list[0]].terminal_count += 1
         except:
             exit('problem adding child %s' % child_list[0])
         
