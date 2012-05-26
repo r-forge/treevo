@@ -1,5 +1,8 @@
 library(TreEvo)
 library(foreach)
+system(command=paste("rm .Rdata"))
+set.seed(793450)
+
 
 # phylogeny 
 phy<-rcoal(20)
@@ -23,7 +26,7 @@ char<-convertTaxonFrameToGeigerData(
 summaryStatsLong(phy, char)
 
 #ABC run on simulated phylogeny and characters
-Rprof('doRun_2.out')
+Rprof('doRun_seed793450.out')
 a<-doRun(
 	phy = phy,
 	traits = char,
