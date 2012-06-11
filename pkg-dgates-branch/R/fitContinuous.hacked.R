@@ -244,13 +244,13 @@ function(ds, print=TRUE)
 		tryFoo<-function(x) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-try(foo(x), silent=T)
+			result<-foo(x)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			else {
-				return(badLnL)
-			}
+			#else {
+			#	return(badLnL)
+			#}
 		options(warn=0) 
 		}
 		
@@ -295,16 +295,16 @@ function(ds, print=TRUE)
 		tryFoo<-function(x) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-try(foo(x), silent=T)
+			result<-foo(x)
 			#print(paste("badLnL in delta is set to",badLnL))
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				#print(paste("in is.finite, result =", result))
 				return(result)
 			}
-			else {
-				return(badLnL)
-				print("in badLnL")
-			}
+			#else {
+			#	return(badLnL)
+			#	print("in badLnL")
+			#}
 		options(warn=0) 
 		}
 		
@@ -344,13 +344,13 @@ function(ds, print=TRUE)
 		tryLnl.noise<-function (p, x, se) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-try(Lnl.noise(p, x, se), silent=T)
+			result<-Lnl.noise(p, x, se)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			else {
-				return(badLnL)
-			}
+			#else {
+			#	return(badLnL)
+			#}
 		}
 		
 		Lnl.noise<- function (p, x, se)
@@ -394,13 +394,13 @@ function(ds, print=TRUE)
 		tryLnl.BMtrend <-function(p, vcv, x, se) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-try(Lnl.BMtrend(p, vcv, x, se), silent=T)
+			result<-Lnl.BMtrend(p, vcv, x, se)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			else {
-				return(badLnL)
-			}
+			#else {
+			#	return(badLnL)
+			#}
 		}
 		
 		Lnl.BMtrend<- function(p, vcv, x, se)
@@ -446,14 +446,14 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-try(foo(x), silent=T)
+			result<-foo(x)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			else {
-				#print("in badLnL")
-				return(badLnL)
-			}
+			#else {
+			#	#print("in badLnL")
+			#	return(badLnL)
+			#}
 		options(warn=0) 
 		}
 		
@@ -491,14 +491,14 @@ function(ds, print=TRUE)
 				lower=c(runif(2, min=-20, max=-1))
 				upper=lower+runif(2, min=0, max=10)
 				start=c(runif(1, min=lower[1], max=upper[1]), runif(1, min=lower[2], max=upper[2]))
-				te<-try(outTries[[i+2]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25), silent=T)
+				te<-outTries[[i+2]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25)
 				#print(te)
 				#te<-try(outTries[[i+2]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
 				if(class(te)!="try-error") break
 				failureCount<-failureCount+1
 				if (failureCount>failureCountSwitch) { #nlm isn't working, let's try optim
 					#toptim<-try(outTries[[i+2]]<-nlm(tryFoo, p=start), silent=T)
-					toptim<-try(outTries[[i+2]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
+					toptim<-outTries[[i+2]]<-optim(foo, p=start, lower=lower, upper=upper, method="L")
 					if (class(toptim)!="try-error") {
 						outTries[[i+2]]$estimate<-outTries[[i+2]]$par
 						outTries[[i+2]]$minimum<-outTries[[i+2]]$value
