@@ -518,14 +518,14 @@ function(ds, print=TRUE)
 				lower=c(-20, -20)
 				upper=c(10, 10)
 				start=c(stry[i], atry[i])
-				te<-try(outTries[[i+12]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25), silent=T)
+				te<-outTries[[i+12]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25)
 				#print(te)
 				#te<-try(outTries[[i+12]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
 				if(class(te)!="try-error") break
 				failureCount<-failureCount+1
 				if (failureCount>failureCountSwitch) { #nlm isn't working, let's try optim
 					#toptim<-try(outTries[[i+12]]<-nlm(tryFoo, p=start), silent=T)
-					toptim<-try(outTries[[i+12]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
+					toptim<-outTries[[i+12]]<-optim(foo, p=start, lower=lower, upper=upper, method="L")
 					if (class(toptim)!="try-error") {
 						outTries[[i+12]]$estimate<-outTries[[i+12]]$par
 						outTries[[i+12]]$minimum<-outTries[[i+12]]$value
@@ -577,14 +577,14 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-try(foo(x), silent=T)
+			result<-foo(x)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			else {
-				#print("in badLnL")
-				return(badLnL)
-			}
+			#else {
+			#	#print("in badLnL")
+			#	return(badLnL)
+			#}
 		options(warn=0) 
 		}
 		
@@ -656,7 +656,7 @@ phylogMean<-function(phyvcv, data) {
 	#print("phyvcv in phylogMean")
 	#print(phyvcv)
 	#save(phyvcv, file="phyvcv")
-	ci<-try(solve(phyvcv), silent=T)
+	ci<-solve(phyvcv)
 	if(class(ci)=="try-error"){
 		print(paste("ci used pseudoinverse"))
 		ci<-pseudoinverse(phyvcv)
@@ -666,7 +666,7 @@ phylogMean<-function(phyvcv, data) {
 	
 	#print("t(o) %*% ci %*% o")
 	#print(t(o) %*% ci %*% o)
-	m1<-try(solve(t(o) %*% ci %*% o), silent=T)
+	m1<-solve(t(o) %*% ci %*% o)
 	if (class(m1)=="try-error"){
 		print(paste("m1 used pseudoinverse"))
 		#save(ci, o, file="stuff")
