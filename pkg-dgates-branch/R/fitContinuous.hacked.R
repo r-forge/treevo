@@ -147,14 +147,15 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-try(foo(x), silent=T)
+			result<-foo(x) #removed a try here
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			else {
+			#without the try I don't think this is applicable
+			#else {
 				#print("in badLnL")
-				return(badLnL)
-			}
+				#return(badLnL)
+			#}
 		options(warn=0) 
 		}
 		
