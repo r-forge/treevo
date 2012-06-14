@@ -1,4 +1,5 @@
-library(corpcor)
+
+    	library(corpcor)
 
 
 `fitContinuous.hacked` <-
@@ -147,15 +148,14 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-foo(x) #removed a try here
+			result<-foo(x)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			#without the try I don't think this is applicable
-			#else {
+			else {
 				#print("in badLnL")
-				#return(badLnL)
-			#}
+				return(badLnL)
+			}
 		options(warn=0) 
 		}
 		
@@ -187,15 +187,15 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-foo(x)
+			result<-try(foo(x), silent=T)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				#print(paste("in is.finite, result =", result))
 				return(result)
 			}
-			#else {
-			#	#print("in badLnL")
-			#	return(badLnL)
-			#}
+			else {
+				#print("in badLnL")
+				return(badLnL)
+			}
 		options(warn=0) 
 		}
 			
@@ -244,13 +244,13 @@ function(ds, print=TRUE)
 		tryFoo<-function(x) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-foo(x)
+			result<-try(foo(x), silent=T)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			#else {
-			#	return(badLnL)
-			#}
+			else {
+				return(badLnL)
+			}
 		options(warn=0) 
 		}
 		
@@ -295,16 +295,16 @@ function(ds, print=TRUE)
 		tryFoo<-function(x) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-foo(x)
+			result<-try(foo(x), silent=T)
 			#print(paste("badLnL in delta is set to",badLnL))
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				#print(paste("in is.finite, result =", result))
 				return(result)
 			}
-			#else {
-			#	return(badLnL)
-			#	print("in badLnL")
-			#}
+			else {
+				return(badLnL)
+				print("in badLnL")
+			}
 		options(warn=0) 
 		}
 		
@@ -344,13 +344,13 @@ function(ds, print=TRUE)
 		tryLnl.noise<-function (p, x, se) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-Lnl.noise(p, x, se)
+			result<-try(Lnl.noise(p, x, se), silent=T)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			#else {
-			#	return(badLnL)
-			#}
+			else {
+				return(badLnL)
+			}
 		}
 		
 		Lnl.noise<- function (p, x, se)
@@ -394,13 +394,13 @@ function(ds, print=TRUE)
 		tryLnl.BMtrend <-function(p, vcv, x, se) {
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#badLnL=100000
-			result<-Lnl.BMtrend(p, vcv, x, se)
+			result<-try(Lnl.BMtrend(p, vcv, x, se), silent=T)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			#else {
-			#	return(badLnL)
-			#}
+			else {
+				return(badLnL)
+			}
 		}
 		
 		Lnl.BMtrend<- function(p, vcv, x, se)
@@ -446,14 +446,14 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-foo(x)
+			result<-try(foo(x), silent=T)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			#else {
-			#	#print("in badLnL")
-			#	return(badLnL)
-			#}
+			else {
+				#print("in badLnL")
+				return(badLnL)
+			}
 		options(warn=0) 
 		}
 		
@@ -491,14 +491,14 @@ function(ds, print=TRUE)
 				lower=c(runif(2, min=-20, max=-1))
 				upper=lower+runif(2, min=0, max=10)
 				start=c(runif(1, min=lower[1], max=upper[1]), runif(1, min=lower[2], max=upper[2]))
-				te<-outTries[[i+2]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25)
+				te<-try(outTries[[i+2]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25), silent=T)
 				#print(te)
 				#te<-try(outTries[[i+2]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
 				if(class(te)!="try-error") break
 				failureCount<-failureCount+1
 				if (failureCount>failureCountSwitch) { #nlm isn't working, let's try optim
 					#toptim<-try(outTries[[i+2]]<-nlm(tryFoo, p=start), silent=T)
-					toptim<-outTries[[i+2]]<-optim(foo, p=start, lower=lower, upper=upper, method="L")
+					toptim<-try(outTries[[i+2]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
 					if (class(toptim)!="try-error") {
 						outTries[[i+2]]$estimate<-outTries[[i+2]]$par
 						outTries[[i+2]]$minimum<-outTries[[i+2]]$value
@@ -518,14 +518,14 @@ function(ds, print=TRUE)
 				lower=c(-20, -20)
 				upper=c(10, 10)
 				start=c(stry[i], atry[i])
-				te<-outTries[[i+12]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25)
+				te<-try(outTries[[i+12]]<-nlm(foo, p=start,print.level=nlm.print.level,interlim=25), silent=T)
 				#print(te)
 				#te<-try(outTries[[i+12]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
 				if(class(te)!="try-error") break
 				failureCount<-failureCount+1
 				if (failureCount>failureCountSwitch) { #nlm isn't working, let's try optim
 					#toptim<-try(outTries[[i+12]]<-nlm(tryFoo, p=start), silent=T)
-					toptim<-outTries[[i+12]]<-optim(foo, p=start, lower=lower, upper=upper, method="L")
+					toptim<-try(outTries[[i+12]]<-optim(foo, p=start, lower=lower, upper=upper, method="L"), silent=T)
 					if (class(toptim)!="try-error") {
 						outTries[[i+12]]$estimate<-outTries[[i+12]]$par
 						outTries[[i+12]]$minimum<-outTries[[i+12]]$value
@@ -577,14 +577,14 @@ function(ds, print=TRUE)
 			options(warn=-1) #do this so that warnings and error get surpressed. Gets generated from exp(param)=Inf in phylogmean
 			#print ("in tryFoo")
 			#badLnL=100000
-			result<-foo(x)
+			result<-try(foo(x), silent=T)
 			if (is.finite(result) && result < log(.Machine$double.xmax)) {
 				return(result)
 			}
-			#else {
-			#	#print("in badLnL")
-			#	return(badLnL)
-			#}
+			else {
+				#print("in badLnL")
+				return(badLnL)
+			}
 		options(warn=0) 
 		}
 		
@@ -656,7 +656,7 @@ phylogMean<-function(phyvcv, data) {
 	#print("phyvcv in phylogMean")
 	#print(phyvcv)
 	#save(phyvcv, file="phyvcv")
-	ci<-solve(phyvcv)
+	ci<-try(solve(phyvcv), silent=T)
 	if(class(ci)=="try-error"){
 		print(paste("ci used pseudoinverse"))
 		ci<-pseudoinverse(phyvcv)
@@ -666,7 +666,7 @@ phylogMean<-function(phyvcv, data) {
 	
 	#print("t(o) %*% ci %*% o")
 	#print(t(o) %*% ci %*% o)
-	m1<-solve(t(o) %*% ci %*% o)
+	m1<-try(solve(t(o) %*% ci %*% o), silent=T)
 	if (class(m1)=="try-error"){
 		print(paste("m1 used pseudoinverse"))
 		#save(ci, o, file="stuff")
@@ -690,4 +690,3 @@ ouMatrix <- function(vcvMatrix, alpha) {
   vcvRescaled = (1 / (2 * alpha)) * exp(-alpha * Tij) * (1 - exp(-2 * alpha * vcvMatrix))
   return(vcvRescaled) 
 }
-    	
