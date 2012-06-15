@@ -657,7 +657,7 @@ phylogMean<-function(phyvcv, data) {
 	#save(phyvcv, file="phyvcv")
 	ci<-try(solve(phyvcv), silent=T)
 	if(class(ci)=="try-error"){
-		print(paste("ci used pseudoinverse"))
+		#print(paste("ci used pseudoinverse"))
 		ci<-pseudoinverse(phyvcv)
 	}
 	#print("ci in phylogMean")
@@ -667,7 +667,7 @@ phylogMean<-function(phyvcv, data) {
 	#print(t(o) %*% ci %*% o)
 	m1<-try(solve(t(o) %*% ci %*% o), silent=T)
 	if (class(m1)=="try-error"){
-		print(paste("m1 used pseudoinverse"))
+		#print(paste("m1 used pseudoinverse"))
 		#save(ci, o, file="stuff")
 		m1<-pseudoinverse(t(o) %*% ci %*% o)
 	}
