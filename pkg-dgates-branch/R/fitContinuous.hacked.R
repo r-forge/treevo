@@ -627,15 +627,15 @@ dmvnormPseudoinverse<-function (x, mean, sigma, log = FALSE) {
     if (missing(sigma)) {
         sigma <- diag(ncol(x))
     }
-    if (NCOL(x) != NCOL(sigma)) {
-        stop("x and sigma have non-conforming size")
-    }
-    if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps))) {
-        stop("sigma must be a symmetric matrix")
-    }
-    if (length(mean) != NROW(sigma)) {
-        stop("mean and sigma have non-conforming size")
-    }
+    #if (NCOL(x) != NCOL(sigma)) {  #Take out sanity checks?
+    #    stop("x and sigma have non-conforming size")
+    #}
+    #if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps))) { #remove?  
+    #    stop("sigma must be a symmetric matrix")
+    #}
+    #if (length(mean) != NROW(sigma)) {  #remove?
+    #    stop("mean and sigma have non-conforming size") 
+    #}
     #print("sigma")
     #print(sigma)
     #print(" starting mahalanobis") 
