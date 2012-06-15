@@ -1,5 +1,4 @@
-
-    	library(corpcor)
+library(corpcor)
 
 
 `fitContinuous.hacked` <-
@@ -55,7 +54,7 @@ function(phy, data, data.names=NULL, model=c("BM", "OU", "lambda", "kappa", "del
     #--------------------------------
     #--- SET MODEL SPECIFICATIONS ---
     #--------------------------------
-    cat("Fitting ", model, "model:\n")
+    #cat("Fitting ", model, "model:\n")
     #-----------------------------
     #---  SET PARAMETER BOUNDS ---
     #-----------------------------
@@ -385,8 +384,8 @@ function(ds, print=TRUE)
   		p0<- c(phylogMean(vcv, y), var(y)/max(branching.times(tree)), coef(ww)[2])
 		if(is.na(p0[3])) {
 			p0[3]<-0
-			if(is.ultrametric(tree))
-				cat("WARNING: Cannot estimate a trend with an ultrametric tree; lnl will be the same as the BM model")
+			#if(is.ultrametric(tree))
+				#cat("WARNING: Cannot estimate a trend with an ultrametric tree; lnl will be the same as the BM model")
 		}
 		#lower=c(-Inf, log(bounds[1,"beta"]), bounds[1,"mu"])
 		#upper=c(Inf, log(bounds[2,"beta"]), bounds[2,"mu"])

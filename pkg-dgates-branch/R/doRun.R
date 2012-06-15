@@ -5,7 +5,7 @@
 #the doRun function takes input from the user and then automatically guesses optimal parameters, though user overriding is also possible.
 #the guesses are used to do simulations near the expected region. If omitted, they are set to the midpoint of the input parameter matrices
 
-doRun<-function(phy, traits, intrinsicFn, extrinsicFn, summaryFns=c(rawValuesSummaryStats, geigerUnivariateSummaryStats2), startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingStatesGuess=c(), intrinsicStatesGuess=c(), extrinsicStatesGuess=c(), TreeYears=1e+06, toleranceVector=c(), numParticles=1000, standardDevFactor=0.05, StartSims=NA, plot=FALSE, vipthresh=0.8, epsilonProportion=0.2, epsilonMultiplier=0.5, nStepsPRC=4, maxTries=1, jobName=NA, debug=TRUE, trueStartingState=NA, trueIntrinsicState=NA, whenToKill=20, startFromCheckpoint=FALSE, stopRule=TRUE, stopValue=0.05, multicore=TRUE, coreLimit=NA,Diagnostics=FALSE) {
+doRun<-function(phy, traits, intrinsicFn, extrinsicFn, summaryFns=c(rawValuesSummaryStats, geigerUnivariateSummaryStats2), startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingStatesGuess=c(), intrinsicStatesGuess=c(), extrinsicStatesGuess=c(), TreeYears=1e+06, toleranceVector=c(), numParticles=1000, standardDevFactor=0.05, StartSims=NA, plot=FALSE, vipthresh=0.8, epsilonProportion=0.2, epsilonMultiplier=0.5, nStepsPRC=4, maxTries=1, jobName=NA, debug=TRUE, trueStartingState=NA, trueIntrinsicState=NA, whenToKill=20, startFromCheckpoint=FALSE, stopRule=TRUE, stopValue=0.05, multicore=TRUE, coreLimit=NA) {
 
 if (!is.binary.tree(phy)) {
 	print("Warning: Tree is not fully dichotomous")
@@ -216,7 +216,7 @@ for (try in 1:maxTries)	{
 			trueFreeValues<-matrix(nrow=0, ncol= numberParametersFree)
 			summaryValues<-matrix(nrow=0, ncol=22+dim(traits)[1]) #there are 22 summary statistics possible, plus the raw data
 			#while(dim(trueFreeValuesANDSummaryValues)[1]>nrepSim){
-				trueFreeValuesANDSummaryValues<-foreach(1:nrepSim, .combine=rbind) %dopar% simulateData(nrepSim, startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, trueFreeValues, freevector, timeStep, intrinsicFn, extrinsicFn, jobName)
+				trueFreeValuesANDSummaryValues<-foreach(1:nrepSim, .combine=rbind) %dopar% simulateData(startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, trueFreeValues, freevector, timeStep, intrinsicFn, extrinsicFn, jobName)
 			#}
 			
 			#print(trueFreeValuesANDSummaryValues)
@@ -266,9 +266,7 @@ for (try in 1:maxTries)	{
 				summaryValues[, summaryValueIndex]<-summary^boxcoxLambda[summaryValueIndex]
 			}
 			summaryDebugging$postTransform<-summaryValues
-                        if (Diagnostics){
-                          print(summaryDebugging)
-                        }
+			print(summaryDebugging)
 			save(summaryDebugging, file=paste("summaryDebugging", jobName, ".Rdata", sep=""))
 			#---------------------- Box-Cox transformation (End) ------------------------------
 
@@ -419,8 +417,7 @@ for (try in 1:maxTries)	{
 				vectorForDataFrame<-c(1, attempts, getId(newparticleVector[[1]]), 0, distance(newparticleVector[[1]]), getWeight(newparticleVector[[1]]), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]))
 				#cat("\n\nlength of vectorForDataFrame = ", length(vectorForDataFrame), "\n", "length of startingStates = ", length(startingStates), "\nlength of intrinsicValues = ", length(intrinsicValues), "\nlength of extrinsicValues = ", length(extrinsicValues), "\ndistance = ", distance(newparticleVector[[1]]), "\nweight = ", getWeight(newparticleVector[[1]]), "\n", vectorForDataFrame, "\n")
 				particleDataFrame<-rbind(particleDataFrame, vectorForDataFrame)
-                                if (Diagnostics){
-                                  cat(particle-1, attempts, floor(numParticles*attempts/particle), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), distance(newparticleVector[[1]]), "\n")}
+				cat(particle-1, attempts, floor(numParticles*attempts/particle), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), distance(newparticleVector[[1]]), "\n")
 					if (floor(numParticles*attempts/particle)>=floor(numParticles)*whenToKill){
 						run.goingwell=FALSE
 						cat ("\n\nexpected number of generations is too high\n\n")
