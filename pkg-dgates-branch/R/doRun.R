@@ -116,9 +116,9 @@ for (try in 1:maxTries)	{
 			#create PriorMatrix
 			namesForPriorMatrix<-c() 
 			PriorMatrix<-matrix(c(startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns), nrow=1, ncol=numberParametersTotal)
-			for (a in 1:dim(startingPriorsValues)[2]) {
-				namesForPriorMatrix<-c(paste("StartingStates", a, sep=""))
-			}
+                        startPriors<-function(a) return(paste("StartingStates",a,sep=""))
+                        SPvec<-c(1:dim(startingPriorsValues)[2])
+                        namesForPriorMatrix<-sapply(SPvec,startPriors)
 			for (b in 1:dim(intrinsicPriorsValues)[2]) {
 				namesForPriorMatrix<-append(namesForPriorMatrix, paste("IntrinsicValue", b, sep=""))
 			}
