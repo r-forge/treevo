@@ -122,9 +122,9 @@ for (try in 1:maxTries)	{
                         intrinsPriors<-function(b) return(paste("IntrinsicValue",b,sep=""))
                         IPvec<-c(1:dim(intrinsicPriorsValues)[2])
                         namesForPriorMatrix<-append(namesForPriorMatrix,sapply(IPvec,intrinsPriors))
-			for (c in 1:dim(extrinsicPriorsValues)[2]) {
-				namesForPriorMatrix <-append(namesForPriorMatrix, paste("ExtrinsicValue", c, sep=""))
-			}
+                        extrinsPriors<-function(c) return(paste("ExtrinsicValue",c,sep=""))
+                        EPvec<-c(1:dim(extrinsicPriorsValues)[2])
+                        namesForPriorMatrix<-append(namesForPriorMatrix,sapply(EPvec,extrinsPriors))
 			PriorMatrix<-rbind(PriorMatrix, cbind(startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues))
 			#PriorMatrix<-rbind(PriorMatrix1, PriorMatrix2)
 			colnames(PriorMatrix)<-namesForPriorMatrix
