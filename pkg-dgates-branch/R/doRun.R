@@ -184,22 +184,20 @@ for (try in 1:maxTries)	{
 			#names(param.stdev)<-c("Generation", )
 			#initialize guesses, if needed
 			if (length(startingStatesGuess)==0) { #if no user guesses, try pulling a value from the prior
-				startingStatesGuess<-rep(NA,length(startingPriorsFns))
-				for (i in 1:length(startingPriorsFns)) {
-					startingStatesGuess[i]<-pullFromPrior(startingPriorsValues[,i],startingPriorsFns[i])
-				}
+                                startPvec<-c(1:length(startingPriorsFns))
+                                startPriorfn<-function(i) return(pullFromPrior(startingPriorsValues[,i],startingPriorsFns[i]))
+                                startingStatesGuess<-sapply(startPvec,startPriorfn)
 			}
-			if (length(intrinsicStatesGuess)==0) { #if no user guesses, try pulling a value from the prior
-				intrinsicStatesGuess<-rep(NA,length(intrinsicPriorsFns))
-				for (i in 1:length(intrinsicPriorsFns)) {
-					intrinsicStatesGuess[i]<-pullFromPrior(intrinsicPriorsValues[,i],intrinsicPriorsFns[i])
-				}
+			if (length(intrinsicStatesGuess)==0) { 
+                                startIPvec<-c(1:length(intrinsicPriorsFns))
+                                startIPriorfn<-function(i) return(pullFromPrior(intrinsicPriorsValues[,1],intrinsicPriorsFns[i]))
+                                intrinsicStatesGuess<-sapply(startIPvec,startIPriorfn)
 			}
-			if (length(extrinsicStatesGuess)==0) { #if no user guesses, try pulling a value from the prior
+			if (length(extrinsicStatesGuess)==0) { 
 				extrinsicStatesGuess<-rep(NA,length(extrinsicPriorsFns))
-				for (i in 1:length(extrinsicPriorsFns)) {
-					extrinsicStatesGuess[i]<-pullFromPrior(extrinsicPriorsValues[,i],extrinsicPriorsFns[i])
-				}
+                                startEPvec<-c(1:length(extrinsicPriorsFns))
+                                startEPriorfn<-function(i) return(pullFromPrior(extrinsicPriorsValues[,1],extrinsicPriorsFns[i]))
+                                extrinsicStatesGuess<-sapply(startEPvec,startEPriorfn)
 			}
 	if (is.na(StartSims)) {
 		StartSims<-1000*numberParametersFree
