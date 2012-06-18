@@ -119,10 +119,9 @@ for (try in 1:maxTries)	{
                         startPriors<-function(a) return(paste("StartingStates",a,sep=""))
                         SPvec<-c(1:dim(startingPriorsValues)[2])
                         namesForPriorMatrix<-sapply(SPvec,startPriors)
-			for (b in 1:dim(intrinsicPriorsValues)[2]) {
-				namesForPriorMatrix<-append(namesForPriorMatrix, paste("IntrinsicValue", b, sep=""))
-			}
-			#print(extrinsicPriorsValues)
+                        intrinsPriors<-function(b) return(paste("IntrinsicValue",b,sep=""))
+                        IPvec<-c(1:dim(intrinsicPriorsValues)[2])
+                        namesForPriorMatrix<-append(namesForPriorMatrix,sapply(IPvec,intrinsPriors))
 			for (c in 1:dim(extrinsicPriorsValues)[2]) {
 				namesForPriorMatrix <-append(namesForPriorMatrix, paste("ExtrinsicValue", c, sep=""))
 			}
