@@ -326,8 +326,8 @@ for (try in 1:maxTries)	{
 			epsilonDistance<-quantile(distanceVector, probs=epsilonProportion) #this gives the distance such that epsilonProportion of the simulations starting from a given set of values will be rejected 
 			toleranceVector<-rep(epsilonDistance, nStepsPRC)
 			
-			if(nStepsPRC>1){
-				for (step in 2:nStepsPRC) {
+			if(nStepsPRC>1){ 
+				for (step in 2:nStepsPRC) { #could vectorize this but it's tricky,currently it's conditional upon the last returned value (although an analytical solution exists...)
 					toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
 				}
 			}
@@ -340,15 +340,10 @@ for (try in 1:maxTries)	{
 			if (plot) {
 				plot(x=c(min(intrinsicPriorsValues), max(intrinsicPriorsValues)), y=c(0, 5*max(toleranceVector)), type="n")
 			}
-			for (i in 1:dim(startingPriorsValues)[2]) {
-				nameVector<-append(nameVector, paste("StartingStates", i, sep=""))
-			}
-			for (i in 1:dim(intrinsicPriorsValues)[2]) {
-				nameVector<-append(nameVector, paste("IntrinsicValue", i, sep=""))
-			}
-			for (i in 1:dim(extrinsicPriorsValues)[2]) {
-				nameVector<-append(nameVector, paste("ExtrinsicValue", i, sep=""))
-			}
+                        nameVector<-append(nameVector,sapply(SPvec,startPriors))
+                        nameVector<-append(nameVector,sapply(IPvec,intrinsPriors))
+                        nameVector<-append(nameVector,sapply(EPvec,extrinsPriors))
+
 			particleWeights=rep(0, numParticles) #stores weights for each particle. Initially, assume infinite number of possible particles (so might not apply in discrete case)
 			particleParameters<-matrix(nrow=numParticles, ncol=dim(startingPriorsValues)[2] +  dim(intrinsicPriorsValues)[2] + dim(extrinsicPriorsValues)[2]) #stores parameters in model for each particle
 			particleDistance=rep(NA, numParticles)
