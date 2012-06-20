@@ -54,9 +54,10 @@ summaryStatsLong<-function(phy, data, todo=c(), jobName="") {
 	summarystats[which(is.finite(summarystats)==FALSE)]<-NA
 	
 	somethingfailed=FALSE
-	failurevector<-rep(NA,length(summarystats))
-	for (i in 1:length(summarystats)) {
-		if (todo[i]==1) {
+        failVec<-c(1:length(summarystats))
+        failurevector<-rep(NA,length(summarystats))
+        failureVecfn<-function(i){
+          	if (todo[i]==1) {
 			if (is.na(summarystats[i])) {
 				somethingfailed=TRUE
 				failurevector[i]=2 #failure!
@@ -69,7 +70,9 @@ summaryStatsLong<-function(phy, data, todo=c(), jobName="") {
 		else {
 			failurevector[i]=0 #means was not tried
 		}
+          return(failurevector[i])
 	}
+        failurevector<-sapply(failVec,failureVecfn)
 	print (paste("failurevector = ",failurevector,collapse="",sep=""))
 	if (somethingfailed) {
 		failed.summarystats<-c(dput(brown), dput(lambda), dput(delta), dput(ou), dput(white))
