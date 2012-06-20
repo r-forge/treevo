@@ -238,8 +238,8 @@ for (try in 1:maxTries)	{
 			boxcoxLambda<-rep(NA, dim(summaryValues)[2])
 			boxcoxAddition<-rep(NA, dim(summaryValues)[2])
 			sumVvec<-c(1:dim(summaryValues)[2])
-                        sumVals<-function(summaryValueIndex){
-                                boxcoxAddition[summaryValueIndex]<-0
+			for (summaryValueIndex in 1:dim(summaryValues)[2]) {
+				boxcoxAddition[summaryValueIndex]<-0
 				lowValue<-min(summaryValues[, summaryValueIndex])-4*sd(summaryValues[, summaryValueIndex])
 				#print (lowValue)
 				if (lowValue<=0) {
@@ -261,9 +261,8 @@ for (try in 1:maxTries)	{
 						#print(boxcoxLambda)
 					}
 				}
-				return(summary^boxcoxLambda[summaryValueIndex])
-                        }
-                        summaryValues<-sapply(sumVvec,sumVals)  
+				summaryValues[, summaryValueIndex]<-summary^boxcoxLambda[summaryValueIndex]
+			}
 			summaryDebugging$postTransform<-summaryValues
 			print(summaryDebugging)
 			save(summaryDebugging, file=paste("summaryDebugging", jobName, ".Rdata", sep=""))
@@ -284,8 +283,8 @@ for (try in 1:maxTries)	{
 			nearZeroVarVector<-mixOmics:::nearZeroVar(summaryValues)
 			nearZeroVarVector<-nearZeroVarVector$Position
 			#print(nearZeroVarVector)
-                        #can reuse sumVvec here?
-			toDofn<-function(summaryIndex){				
+			for (summaryIndex in 1:dim(summaryValues)[2]) {
+				
 				#print(summaryIndex)
 				if (summaryIndex %in% nearZeroVarVector) {
 					summaryIndexOffset=summaryIndexOffset+1
@@ -293,10 +292,9 @@ for (try in 1:maxTries)	{
 				}	
 				else if (max(vipResult[summaryIndex-summaryIndexOffset, ]) < vipthresh) {
 					todo[summaryIndex]<-0 #exclude this summary stat, because it is too unimportant
-				}
-                                return(todo[summaryIndex])
+				}	
 			}
-		        todo<-sapply(sumVvec,toDofn)
+
 		
 			while(sink.number()>0) {sink()}
 			#print(todo)
@@ -319,10 +317,11 @@ for (try in 1:maxTries)	{
 			predictResult<-as.matrix(predict(prunedPlsResult, prunedSummaryValues)$predict[, , 1])
 			#print(predictResult) 
 			#print(dim(predictResult)[1])
-                        predResVec<-c(1:dim(predictResult)[1])
-                        distVec<-function(simulationIndex) return(dist(matrix(c(trueFreeValues[simulationIndex, ], predictResult[simulationIndex, ]), nrow=2, byrow=TRUE))[1])
-                        distanceVector<-sapply(predResVec,distVec)		
-
+			distanceVector<-rep(NA, dim(predictResult)[1])
+		
+			for (simulationIndex in 1:dim(predictResult)[1]) {
+					distanceVector[simulationIndex]<-dist(matrix(c(trueFreeValues[simulationIndex, ], predictResult[simulationIndex, ]), nrow=2, byrow=TRUE))[1]
+			}
 			#print("distanceVector", distanceVector, "\n")
 			densityDistanceVector<-density(distanceVector)
 			#plot(densityDistanceVector)
