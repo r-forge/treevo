@@ -213,7 +213,7 @@ for (try in 1:maxTries)	{
 			trueFreeValues<-matrix(nrow=0, ncol= numberParametersFree)
 			summaryValues<-matrix(nrow=0, ncol=22+dim(traits)[1]) #there are 22 summary statistics possible, plus the raw data
 			#while(dim(trueFreeValuesANDSummaryValues)[1]>nrepSim){
-				trueFreeValuesANDSummaryValues<-foreach(1:nrepSim, .combine=rbind) %dopar% simulateData(nrepSim, startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, trueFreeValues, freevector, timeStep, intrinsicFn, extrinsicFn, jobName)
+			trueFreeValuesANDSummaryValues<-foreach(1:nrepSim, .combine=rbind) %dopar% simulateData(nrepSim, startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, trueFreeValues, freevector, timeStep, intrinsicFn, extrinsicFn, jobName)
 			#}
 			
 			#print(trueFreeValuesANDSummaryValues)
@@ -355,66 +355,76 @@ for (try in 1:maxTries)	{
 			particleVector<-c()
 			#cat("originalSummaryStats\n")
 			#print(originalSummaryStats)
-			while (particle<=numParticles) {
-				attempts<-attempts+1
-				
-				newparticleVector<-c(new("abcparticle", id=particle, generation=1, weight=0))
-				newparticleVector[[1]]<-initializeStatesFromMatrices(newparticleVector[[1]], startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns)
-				#cat("\nextrinsicVector\n")
-				#print(extrinsicValues(newparticleVector[[1]]))
-				#cat("\nintrinsicVector\n")
-				#print(intrinsicValues(newparticleVector[[1]]))
-		
-				newparticleVector[[1]]<-setDistance(newparticleVector[[1]], dist(matrix(c(boxcoxplsSummary(todo, summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy), todo, jobName=jobName), prunedPlsResult, boxcoxLambda, boxcoxAddition), originalSummaryStats), nrow=2, byrow=TRUE))[1])
-				if (is.na(distance(newparticleVector[[1]]))) {
+			while (particle<=numParticles){
+				particleVec<-function(){ #this function doesn't actually need arguments, how to apply in that situation?
+					newparticleVector<-c(new("abcparticle", id=particle, generation=1, weight=0))
+					newparticleVector[[1]]<-initializeStatesFromMatrices(newparticleVector[[1]], startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns)
+					#cat("\nextrinsicVector\n")
+					#print(extrinsicValues(newparticleVector[[1]]))
+					#cat("\nintrinsicVector\n")
+					#print(intrinsicValues(newparticleVector[[1]]))
+                                
+                                #This is the longer simulation stepbelow
+					newparticleVector[[1]]<-setDistance(newparticleVector[[1]], dist(matrix(c(boxcoxplsSummary(todo, summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy), todo, jobName=jobName), prunedPlsResult, boxcoxLambda, boxcoxAddition), originalSummaryStats), nrow=2, byrow=TRUE))[1])
+                              return(newparticleVector[[1]])
+                              }
+                                
+			      listPartVecs<-foreach(1:coreLimit) %dopar% particleVec()
+	                      #somevec<-c(1:coreLimit)# should be c(1:numberCores)
+                              #listPartVecs<-mclapply(somevec,particleVec,mc.cores=coreLimit)
+
+                              for (newparticleVector in listPartVecs){
+                                attempts<-attempts+1
+                                if (is.na(distance(newparticleVector))) {
 					newparticleVectorError<-vector("list", 9)
-					newparticleVectorError[[1]]<-newparticleVector[[1]]
-					newparticleVectorError[[2]]<-matrix(c(boxcoxplsSummary(todo, summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy), todo, jobName=jobName), prunedPlsResult, boxcoxLambda, boxcoxAddition), originalSummaryStats), nrow=2, byrow=TRUE)
-					newparticleVectorError[[3]]<-c(boxcoxplsSummary(todo, summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy), todo, jobName=jobName), prunedPlsResult, boxcoxLambda, boxcoxAddition), originalSummaryStats)
+					newparticleVectorError[[1]]<-newparticleVector
+					newparticleVectorError[[2]]<-matrix(c(boxcoxplsSummary(todo, summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), timeStep), phy), todo, jobName=jobName), prunedPlsResult, boxcoxLambda, boxcoxAddition), originalSummaryStats), nrow=2, byrow=TRUE)
+					newparticleVectorError[[3]]<-c(boxcoxplsSummary(todo, summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), timeStep), phy), todo, jobName=jobName), prunedPlsResult, boxcoxLambda, boxcoxAddition), originalSummaryStats)
 					newparticleVectorError[[4]]<-todo
-					newparticleVectorError[[5]]<-summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy), todo, jobName=jobName)
+					newparticleVectorError[[5]]<-summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), timeStep), phy), todo, jobName=jobName)
 					newparticleVectorError[[6]]<-phy
 					newparticleVectorError[[7]]<-vipResult
-					newparticleVectorError[[8]]<-convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy)
-					newparticleVectorError[[9]]<-convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), timeStep), phy)
+					newparticleVectorError[[8]]<-convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), timeStep), phy)
+					newparticleVectorError[[9]]<-convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), timeStep), phy)
 		
 					save(newparticleVectorError, file=paste("newparticleVectorError", jobName, ".txt", sep=""))
 		
 					while(sink.number()>0) {sink()}
-					warning("distance(newparticleVector[[1]]) = NA, likely an underflow/overflow problem")
-					newparticleVector[[1]]<-setId(newparticleVector[[1]], -1)
-					newparticleVector[[1]]<-setWeight(newparticleVector[[1]], 0)
+					warning("distance(newparticleVector) = NA, likely an underflow/overflow problem")
+					newparticleVector<-setId(newparticleVector, -1)
+					newparticleVector<-setWeight(newparticleVector, 0)
 				}
 				else if (is.na(toleranceVector[1])) {
 					while(sink.number()>0) {sink()}
 					warning("toleranceVector[1] = NA")
-					newparticleVector[[1]]<-setId(newparticleVector[[1]], -1)
-					newparticleVector[[1]]<-setWeight(newparticleVector[[1]], 0)
+					newparticleVector<-setId(newparticleVector, -1)
+					newparticleVector<-setWeight(newparticleVector, 0)
 				}
 						
 						
-				else if ((distance(newparticleVector[[1]])) < toleranceVector[1]) {
-					newparticleVector[[1]]<-setId(newparticleVector[[1]], particle)
-					newparticleVector[[1]]<-setWeight(newparticleVector[[1]], 1/numParticles)
+				else if ((distance(newparticleVector)) < toleranceVector[1]) {
+					newparticleVector<-setId(newparticleVector, particle)
+					newparticleVector<-setWeight(newparticleVector, 1/numParticles)
 					particleWeights[particle]<-1/numParticles
 					particle<-particle+1
 					particleVector<-append(particleVector, newparticleVector)
 				}
 				else {
-					newparticleVector[[1]]<-setId(newparticleVector[[1]], -1)
-					newparticleVector[[1]]<-setWeight(newparticleVector[[1]], 0)
+					newparticleVector<-setId(newparticleVector, -1)
+					newparticleVector<-setWeight(newparticleVector, 0)
 				}
 				while(sink.number()>0) {sink()}
 				#print(newparticleVector)
-				vectorForDataFrame<-c(1, attempts, getId(newparticleVector[[1]]), 0, distance(newparticleVector[[1]]), getWeight(newparticleVector[[1]]), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]))
+				vectorForDataFrame<-c(1, attempts, getId(newparticleVector), 0, distance(newparticleVector), getWeight(newparticleVector), startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector))
 				#cat("\n\nlength of vectorForDataFrame = ", length(vectorForDataFrame), "\n", "length of startingStates = ", length(startingStates), "\nlength of intrinsicValues = ", length(intrinsicValues), "\nlength of extrinsicValues = ", length(extrinsicValues), "\ndistance = ", distance(newparticleVector[[1]]), "\nweight = ", getWeight(newparticleVector[[1]]), "\n", vectorForDataFrame, "\n")
 				particleDataFrame<-rbind(particleDataFrame, vectorForDataFrame)
-				cat(particle-1, attempts, floor(numParticles*attempts/particle), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), distance(newparticleVector[[1]]), "\n")
+				cat(particle -1, attempts, floor(numParticles*attempts/particle), startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), distance(newparticleVector), "\n")
 					if (floor(numParticles*attempts/particle)>=floor(numParticles)*whenToKill){
 						run.goingwell=FALSE
 						cat ("\n\nexpected number of generations is too high\n\n")
 						break 
 					}
+                              } #dans for loop vector
 		} #while (particle<=numParticles) bracket
 		
 			names(particleDataFrame)<-nameVector
@@ -512,8 +522,9 @@ for (try in 1:maxTries)	{
 						cat("successes", "attempts", "expected number of attempts required\n")
 						particleVector<-c()
 						weightScaling=0;
-						while (particle<=numParticles) {
-							attempts<-attempts+1
+						while (particle<=numParticles){
+                                                  
+                                                      particleVec<-function(){ 
 							particleToSelect<-which.max(as.vector(rmultinom(1, size = 1, prob=oldParticleWeights)))
 							#cat("particle to select = ", particleToSelect, "\n")
 							#cat("dput(oldParticleVector)\n")
@@ -542,27 +553,35 @@ for (try in 1:maxTries)	{
 								}
 								text(x=intrinsicValues(newparticleVector[[1]]), y=distance(newparticleVector[[1]]), labels= dataGenerationStep, col=plotcol) 
 							}
-							#dput(convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleVector[[1]]@startingStates, newparticleVector[[1]]@intrinsicValues, newparticleVector[[1]]@extrinsicValues, timeStep), phy))
-							#cat("dput(newparticleVector[[1]]) AFTER computeABCDistance\n")
-							#dput(newparticleVector[[1]])
-						
-							if (is.na(distance(newparticleVector[[1]]))) {
+						      return(newparticleVector[[1]])
+						      }
+						        
+						      listPartVecs<-foreach(1:coreLimit) %dopar% particleVec()
+							selectvector<-c()
+							for (x in 1:length(listPartVecs)){
+								selectvector<-c(selectvector,getId(listPartVecs[[x]]))
+							}
+							#print(listPartVecs)
+                                                      for (c in 1:length(listPartVecs)){
+							newparticleVector<-listPartVecs[[c]]
+                                                        attempts<-attempts+1
+                                                        if (is.na(distance(newparticleVector))) {
 								#cat("Error with Geiger?  distance(newparticleVector[[1]]) = NA\n")
 								while(sink.number()>0) {sink()}
 								#warning("distance(newparticleVector[[1]]) = NA")
-								newparticleVector[[1]]<-setId(newparticleVector[[1]], -1)
-								newparticleVector[[1]]<-setWeight(newparticleVector[[1]], 0)
+								newparticleVector<-setId(newparticleVector, -1)
+								newparticleVector<-setWeight(newparticleVector, 0)
 							}
-							else if (distance(newparticleVector[[1]]) < toleranceVector[dataGenerationStep]) {
-								newparticleVector[[1]]<-setId(newparticleVector[[1]], particle)
+							else if (distance(newparticleVector) < toleranceVector[dataGenerationStep]) {
+								newparticleVector<-setId(newparticleVector, particle)
 								particle<-particle+1
 								particleVector<-append(particleVector, newparticleVector)
 								#now get weights, using correction in Sisson et al. 2007
 								newWeight=0
 								for (i in 1:length(oldParticleVector)) {
 									lnTransitionProb=log(1)
-									for (j in 1:length(newparticleVector[[1]]@startingStates)) {
-										newvalue<-newparticleVector[[1]]@startingStates[j]
+									for (j in 1:length(newparticleVector@startingStates)) {
+										newvalue<-newparticleVector@startingStates[j]
 										meantouse= oldParticleVector[[i]]@startingStates[j]
 											if (startingPriorsFns[j]=="uniform") {
 												sdtouse<-standardDevFactor*((max(startingPriorsValues[,j])-min(startingPriorsValues[,j]))/sqrt(12))
@@ -596,8 +615,8 @@ for (try in 1:maxTries)	{
 											print(paste("issue with lnTransitionProb: lnlocalTransitionProb = ",lnlocalTransitionProb," lnTransitionProb = ",lnTransitionProb))
 										}
 									} 
-									for (j in 1:length(newparticleVector[[1]]@intrinsicValues)) {
-										newvalue<-newparticleVector[[1]]@intrinsicValues[j]
+									for (j in 1:length(newparticleVector@intrinsicValues)) {
+										newvalue<-newparticleVector@intrinsicValues[j]
 										meantouse= oldParticleVector[[i]]@intrinsicValues[j]
 										if (intrinsicPriorsFns[j]=="uniform") {
 											sdtouse<-standardDevFactor*((max(intrinsicPriorsValues[,j])-min(intrinsicPriorsValues[,j]))/sqrt(12))
@@ -631,8 +650,8 @@ for (try in 1:maxTries)	{
 										}
 				
 									} 
-									for (j in 1:length(newparticleVector[[1]]@extrinsicValues)) {
-										newvalue<-newparticleVector[[1]]@extrinsicValues[j]
+									for (j in 1:length(newparticleVector@extrinsicValues)) {
+										newvalue<-newparticleVector@extrinsicValues[j]
 										meantouse= oldParticleVector[[i]]@extrinsicValues[j]
 										if (extrinsicPriorsFns[j]=="uniform") {
 											sdtouse<-standardDevFactor*((max(extrinsicPriorsValues[,j])-min(extrinsicPriorsValues[,j]))/sqrt(12))
@@ -670,32 +689,34 @@ for (try in 1:maxTries)	{
 								if (!is.finite(newWeight)) {
 									print(paste("warning: newWeight is ",newWeight))
 								}
-								newparticleVector[[1]]<-setWeight(newparticleVector[[1]], newWeight)
+								newparticleVector<-setWeight(newparticleVector, newWeight)
 								particleWeights[particle-1]<-newWeight
-								weightScaling<-weightScaling+getWeight(newparticleVector[[1]])
+								weightScaling<-weightScaling+getWeight(newparticleVector)
 							} #else if (distance(newparticleVector[[1]]) < toleranceVector[dataGenerationStep]) bracket
 							else {
-								newparticleVector[[1]]<-setId(newparticleVector[[1]], -1)
-								newparticleVector[[1]]<-setWeight(newparticleVector[[1]], 0)
+								newparticleVector<-setId(newparticleVector, -1)
+								newparticleVector<-setWeight(newparticleVector, 0)
 							}
 							while(sink.number()>0) {sink()}
 							#print(newparticleVector)
-							vectorForDataFrame<-c(dataGenerationStep, attempts, getId(newparticleVector[[1]]), particleToSelect, distance(newparticleVector[[1]]), getWeight(newparticleVector[[1]]), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]))
+							vectorForDataFrame<-c(dataGenerationStep, attempts, getId(newparticleVector), selectvector[c], distance(newparticleVector), getWeight(newparticleVector), startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector))
 							save(vectorForDataFrame, file="vector.Rdata")
 				#cat("\n\nlength of vectorForDataFrame = ", length(vectorForDataFrame), "\n", "length of startingStates = ", length(startingStates), "\nlength of intrinsicValues = ", length(intrinsicValues), "\nlength of extrinsicValues = ", length(extrinsicValues), "\ndistance = ", distance(newparticleVector[[1]]), "\nweight = ", getWeight(newparticleVector[[1]]), "\n", vectorForDataFrame, "\n")
-											save(particleDataFrame, file="pDF.Rdata")
+							save(particleDataFrame, file="pDF.Rdata")
 
 							particleDataFrame<-rbind(particleDataFrame, vectorForDataFrame) #NOTE THAT WEIGHTS AREN'T NORMALIZED IN THIS DATAFRAME
-							cat(particle-1, attempts, floor(numParticles*attempts/particle), startingStates(newparticleVector[[1]]), intrinsicValues(newparticleVector[[1]]), extrinsicValues(newparticleVector[[1]]), distance(newparticleVector[[1]]), "\n")
+							cat(particle-1, attempts, floor(numParticles*attempts/particle), startingStates(newparticleVector), intrinsicValues(newparticleVector), extrinsicValues(newparticleVector), distance(newparticleVector), "\n")
 							if (floor(numParticles*attempts/particle)>=floor(numParticles)*whenToKill){
 								run.goingwell=FALSE
 								cat ("\n\nexpected number of generations is too high\n\n")
 								break 
 							}
-				
-						} #while (particle<=numParticles) bracket
-					
-						if (!run.goingwell){
+                              } #dans for bracket (fix the indentations...)
+                                                      
+						      
+				} #while bracket
+			
+			if (!run.goingwell){
 							break
 						}		
 					
