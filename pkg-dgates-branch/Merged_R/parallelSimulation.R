@@ -1,6 +1,6 @@
 
 parallelSimulation<-function(nrepSim, coreLimit, splits, phy, startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, freevector, timeStep, intrinsicFn, extrinsicFn, multicore,checkpointFile=NULL,checkpointFreq=24) {
-	library(doMC, quietly=T)
+	#library(doMC, quietly=T)
 	library(foreach, quietly=T)
 	cores=1
 	if (multicore) {

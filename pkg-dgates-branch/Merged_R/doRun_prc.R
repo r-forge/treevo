@@ -214,48 +214,53 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 			start.time<-proc.time()[[3]]
 			particleList<-list()
 			
-			while (particle<=numParticles) {
-				attempts<-attempts+1
-				
+			while (particle<=numParticles) { #skipping this for now...
+				#attempts<-attempts+1
+				particleFn<-function(){
 				newparticleList<-list(abcparticle(id=particle, generation=1, weight=0))
 				newparticleList[[1]]<-initializeStatesFromMatrices(newparticleList[[1]], startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns)
 
-				boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)
+				boxcoxOneSimSumStats<<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)
 
 				newparticleList[[1]]$distance<-abcDistance(trueFreeValuesMatrix, whichVip, boxcoxOriginalSummaryStats, rbind(boxcoxOneSimSumStats, boxcoxOneSimSumStats))$abcDistances[1] #trueFreeValuesMatrix is used here just for finding dims, not distances.  #silly way around the one-row matrix issue--rbind the same data and then extract the first element.  
 				#boxcoxSummaryValuesMatrix<-matrix(boxcoxParticleSummaryStats,nrow=1)
 				#newparticleList[[1]]$distance<-dist(matrix(c(boxcoxplsSummary(oneSimSumStats, plsResult, boxcoxLambda, boxcoxAddition, whichVip), boxcoxplsOriginalSummaryStats), nrow=2, byrow=TRUE))[1]
-				
-				if (is.na(newparticleList[[1]]$distance)) {
-					warning("newparticleList[[1]]$distance = NA, likely an underflow/overflow problem")
-					newparticleList[[1]]$id <-  (-1)
-					newparticleList[[1]]$weight<- 0
+				return(newparticleList[[1]])
+				}
+				listpartvec<-foreach(1:coreLimit) %dopar% particleFn()
+
+				for(newparticleList in listpartvec){
+				attempts<-attempts+1
+				if (is.na(newparticleList$distance)) {
+					warning("newparticleList$distance = NA, likely an underflow/overflow problem")
+					newparticleList$id <-  (-1)
+					newparticleList$weight<- 0
 				}
 				else if (is.na(toleranceVector[1])) {
 					warning("toleranceVector[1] = NA")
-					newparticleList[[1]]$id <- (-1)
-					newparticleList[[1]]$weight <- 0
+					newparticleList$id <- (-1)
+					newparticleList$weight <- 0
 				}
 						
 						
-				else if ((newparticleList[[1]]$distance) < toleranceVector[1]) {
-					newparticleList[[1]]$id <- particle
-					newparticleList[[1]]$weight <- 1/numParticles
+				else if ((newparticleList$distance) < toleranceVector[1]) {
+					newparticleList$id <- particle
+					newparticleList$weight <- 1/numParticles
 					particleWeights[particle] <- 1/numParticles
 					particle<-particle+1
-					particleList<-append(particleList, newparticleList)
+					particleList[[length(particleList)+1]]<-newparticleList
 				}
 				else {
-					newparticleList[[1]]$id <- (-1)
-					newparticleList[[1]]$weight <- 0
+					newparticleList$id <- (-1)
+					newparticleList$weight <- 0
 				}
 				#while(sink.number()>0) {sink()}
 				#print(newparticleList)
-				vectorForDataFrame<-c(1, attempts, newparticleList[[1]]$id, 0, newparticleList[[1]]$distance, newparticleList[[1]]$weight, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues)
+				vectorForDataFrame<-c(1, attempts, newparticleList$id, 0, newparticleList$distance, newparticleList$weight, newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues)
 				#cat("\n\nlength of vectorForDataFrame = ", length(vectorForDataFrame), "\n", "length of startingValues = ", length(startingValues), "\nlength of intrinsicValues = ", length(intrinsicValues), "\nlength of extrinsicValues = ", length(extrinsicValues), "\ndistance = ", newparticleList[[1]]$distance, "\nweight = ", newparticleList[[1]]$weight, "\n", vectorForDataFrame, "\n")
 				particleDataFrame<-rbind(particleDataFrame, vectorForDataFrame)
-				cat(particle-1, attempts, floor(numParticles*attempts/particle), newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, newparticleList[[1]]$distance, "\n")
-					
+				cat(particle-1, attempts, floor(numParticles*attempts/particle), newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues, newparticleList$distance, "\n")
+				} #Dan's for loop bracket	
 		} #while (particle<=numParticles) bracket
 		
 			names(particleDataFrame)<-nameVector
@@ -272,7 +277,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 			}
 		
 
-			save.image(file=paste("WS", jobName, ".Rdata", sep=""))
+			#save.image(file=paste("WS", jobName, ".Rdata", sep=""))
 			prcResults<-vector("list")
 			prcResults$input.data<-input.data
 			prcResults$PriorMatrix<-PriorMatrix
@@ -292,7 +297,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 			prcResults$time.per.gen<-time.per.gen
 			prcResults$whichVip<-whichVip
 			
-			save(prcResults, file=paste("partialResults", jobName, ".txt", sep=""))
+			#save(prcResults, file=paste("partialResults", jobName, ".txt", sep=""))
 			
 			
 		
@@ -315,8 +320,10 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 						particleList<-list()
 						weightScaling=0;
 						while (particle<=numParticles) {
-							attempts<-attempts+1
-							particleToSelect<-which.max(as.vector(rmultinom(1, size = 1, prob=oldParticleWeights)))
+							particleFun<-function(){
+
+						
+							particleToSelect<<-which.max(as.vector(rmultinom(1, size = 1, prob=oldParticleWeights)))
 							#cat("particle to select = ", particleToSelect, "\n")
 							#cat("dput(oldParticleList)\n")
 							#dput(oldParticleList)
@@ -345,26 +352,33 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 								}
 								text(x=newparticleList[[1]]$intrinsicValues, y=newparticleList[[1]]$distance, labels= dataGenerationStep, col=plotcol) 
 							}
-							#cat("dput(newparticleList[[1]]) AFTER computeABCDistance\n")
-							#dput(newparticleList[[1]])
-						
-							if (is.na(newparticleList[[1]]$distance)) {
-								#cat("Error with Geiger?  newparticleList[[1]]$distance = NA\n")
-								#while(sink.number()>0) {sink()}
-								#warning("newparticleList[[1]]$distance = NA")
-								newparticleList[[1]]$id <- (-1)
-								newparticleList[[1]]$weight <- 0
+							return(newparticleList[[1]])
 							}
-							else if (newparticleList[[1]]$distance < toleranceVector[dataGenerationStep]) {
-								newparticleList[[1]]$id <- particle
+							listPartVecs<- foreach (1:coreLimit) %dopar% particleFun()
+							
+							for (newparticleList in listPartVecs){
+							attempts<-attempts+1
+
+							#cat("dput(newparticleList) AFTER computeABCDistance\n")
+							#dput(newparticleList)
+						
+							if (is.na(newparticleList$distance)) {
+								#cat("Error with Geiger?  newparticleList$distance = NA\n")
+								#while(sink.number()>0) {sink()}
+								#warning("newparticleList$distance = NA")
+								newparticleList$id <- (-1)
+								newparticleList$weight <- 0
+							}
+							else if (newparticleList$distance < toleranceVector[dataGenerationStep]) {
+								newparticleList$id <- particle
 								particle<-particle+1
-								particleList<-append(particleList, newparticleList)
+								particleList[[length(particleList)+1]]<- newparticleList
 								#now get weights, using correction in Sisson et al. 2007
 								newWeight=0
 								for (i in 1:length(oldParticleList)) {
 									lnTransitionProb=log(1)
-									for (j in 1:length(newparticleList[[1]]$startingValues)) {
-										newvalue<-newparticleList[[1]]$startingValues[j]
+									for (j in 1:length(newparticleList$startingValues)) {
+										newvalue<-newparticleList$startingValues[j]
 										meantouse= oldParticleList[[i]]$startingValues[j]
 											if (startingPriorsFns[j]=="uniform") {
 												sdtouse<-standardDevFactor*((max(startingPriorsValues[,j])-min(startingPriorsValues[,j]))/sqrt(12))
@@ -391,8 +405,8 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 											print(paste("issue with lnTransitionProb: lnlocalTransitionProb = ",lnlocalTransitionProb," lnTransitionProb = ",lnTransitionProb))
 										}
 									} 
-									for (j in 1:length(newparticleList[[1]]$intrinsicValues)) {
-										newvalue<-newparticleList[[1]]$intrinsicValues[j]
+									for (j in 1:length(newparticleList$intrinsicValues)) {
+										newvalue<-newparticleList$intrinsicValues[j]
 										meantouse= oldParticleList[[i]]$intrinsicValues[j]
 										if (intrinsicPriorsFns[j]=="uniform") {
 											sdtouse<-standardDevFactor*((max(intrinsicPriorsValues[,j])-min(intrinsicPriorsValues[,j]))/sqrt(12))
@@ -417,8 +431,8 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 										}
 				
 									} 
-									for (j in 1:length(newparticleList[[1]]$extrinsicValues)) {
-										newvalue<-newparticleList[[1]]$extrinsicValues[j]
+									for (j in 1:length(newparticleList$extrinsicValues)) {
+										newvalue<-newparticleList$extrinsicValues[j]
 										meantouse= oldParticleList[[i]]$extrinsicValues[j]
 										if (extrinsicPriorsFns[j]=="uniform") {
 											sdtouse<-standardDevFactor*((max(extrinsicPriorsValues[,j])-min(extrinsicPriorsValues[,j]))/sqrt(12))
@@ -448,24 +462,25 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 								if (!is.finite(newWeight)) {
 									print(paste("warning: newWeight is ",newWeight))
 								}
-								newparticleList[[1]]$weight<- newWeight
+								newparticleList$weight<- newWeight
 								particleWeights[particle-1]<-newWeight
 								weightScaling<-weightScaling+newWeight
-							} #else if (newparticleList[[1]]$distance < toleranceVector[dataGenerationStep]) bracket
+							} #else if (newparticleList$distance < toleranceVector[dataGenerationStep]) bracket
 							else {
-								newparticleList[[1]]$id<- (-1)
-								newparticleList[[1]]$weight<-0
+								newparticleList$id<- (-1)
+								newparticleList$weight<-0
 							}
 							#while(sink.number()>0) {sink()}
 							#print(newparticleList)
-							vectorForDataFrame<-c(dataGenerationStep, attempts,newparticleList[[1]]$id, particleToSelect, newparticleList[[1]]$distance, newparticleList[[1]]$weight, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues)
+							vectorForDataFrame<-c(dataGenerationStep, attempts,newparticleList$id, particleToSelect, newparticleList$distance, newparticleList$weight, newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues)
 							save(vectorForDataFrame, file="vector.Rdata")
-				#cat("\n\nlength of vectorForDataFrame = ", length(vectorForDataFrame), "\n", "length of startingValues = ", length(startingValues), "\nlength of intrinsicValues = ", length(intrinsicValues), "\nlength of extrinsicValues = ", length(extrinsicValues), "\ndistance = ", newparticleList[[1]]$distance, "\nweight = ", newparticleList[[1]]$weight, "\n", vectorForDataFrame, "\n")
+				#cat("\n\nlength of vectorForDataFrame = ", length(vectorForDataFrame), "\n", "length of startingValues = ", length(startingValues), "\nlength of intrinsicValues = ", length(intrinsicValues), "\nlength of extrinsicValues = ", length(extrinsicValues), "\ndistance = ", newparticleList$distance, "\nweight = ", newparticleList$weight, "\n", vectorForDataFrame, "\n")
 											save(particleDataFrame, file="pDF.Rdata")
 
 							particleDataFrame<-rbind(particleDataFrame, vectorForDataFrame) #NOTE THAT WEIGHTS AREN'T NORMALIZED IN THIS DATAFRAME
-							cat(particle-1, attempts, floor(numParticles*attempts/particle), newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, newparticleList[[1]]$distance, "\n")
-											
+							cat(particle-1, attempts, floor(numParticles*attempts/particle), newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues, newparticleList$distance, "\n")
+												
+						} #dan's for loop bracket
 						} #while (particle<=numParticles) bracket
 					
 									
@@ -573,9 +588,9 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 		prcResults$HPD <-FinalParamPredictions_HPD
 	
 
-	registerDoMC(1) #set number of cores back to 1
+	#registerDoMC(1) #set number of cores back to 1
 	print(prcResults)
 
-}
+}#DoRun bracket
 
 	#------------------ ABC-PRC (end) ------------------
