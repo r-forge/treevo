@@ -124,7 +124,7 @@ if (is.na(StartSims)) {
 			#---------------------- Initial Simulations (Start) ------------------------------
 			#See Wegmann et al. Efficient Approximate Bayesian Computation Coupled With Markov Chain Monte Carlo Without Likelihood. Genetics (2009) vol. 182 (4) pp. 1207-1218 for more on the method. Note, though, that we are not doing PLS, only Box-Cox transformation
 nrepSim<-StartSims #Used to be = StartSims*((2^try)/2), If initial simulations are not enough, and we need to try again then new analysis will double number of initial simulations
-input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor, trueStartingState, trueIntrinsicState)		
+input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor)		
 cat(paste("Number of initial simulations set to", nrepSim, "\n"))
 cat("Doing simulations:")
 Time<-proc.time()[[3]]
@@ -267,7 +267,6 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 				cat(particle-1, attempts, floor(numParticles*attempts/particle), newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues, newparticleList$distance, "\n")
 				} #Dan's for loop bracket	
 		} #while (particle<=numParticles) bracket
-			boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)#this could be quite inefficient but it's needed for the next steps...
 			names(particleDataFrame)<-nameVector
 			dataGenerationStep=1
 			time<-proc.time()[[3]]-start.time
@@ -335,6 +334,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 							#cat("mutateStates\n")
 							
 							newparticleList[[1]]<-mutateStates(newparticleList[[1]], startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, standardDevFactor)
+							boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)
 							#cat("dput(newparticleList[[1]]) AFTER MUTATE STATES\n")
 							#dput(newparticleList[[1]])
 							
@@ -553,7 +553,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 		FinalParamPredictions_CredInt<-CredInt(particleDataFrame)
 		FinalParamPredictions_HPD<-HPD(particleDataFrame)
 
-		input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor, trueStartingState, trueIntrinsicState)
+		input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor)
 	
 		time3<-proc.time()[[3]]
 		genTimes<-c(time.per.gen, time3)
@@ -720,7 +720,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 				} #Dan's for loop bracket	
 		} #while (particle<=numParticles) bracket
 			
-			boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList$startingValues, newparticleList$intrinsicValues, newparticleList$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)#this could be quite inefficient but it's needed for the next steps...
+			
 			names(particleDataFrame)<-nameVector
 			dataGenerationStep=1
 			time<-proc.time()[[3]]-start.time
@@ -788,6 +788,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 							#cat("dput(newparticleList[[1]]) AFTER MUTATE STATES\n")
 							#dput(newparticleList[[1]])
 							
+							boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)
 							newparticleList[[1]]$distance<-abcDistance(trueFreeValuesMatrix, whichVip, boxcoxOriginalSummaryStats, rbind(boxcoxOneSimSumStats, boxcoxOneSimSumStats))$abcDistances[1] #trueFreeValuesMatrix is used here just for finding dims, not distances.  #silly way around the one-row matrix issue--rbind the same data and then extract the first element.  
 							#dist(matrix(c(boxcoxplsSummary(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), plsResult, boxcoxLambda, boxcoxAddition, whichVip), boxcoxplsOriginalSummaryStats), nrow=2, byrow=TRUE))[1]
 							if (plot) {
@@ -1003,7 +1004,7 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 		FinalParamPredictions_CredInt<-CredInt(particleDataFrame)
 		FinalParamPredictions_HPD<-HPD(particleDataFrame)
 
-		input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor, trueStartingState, trueIntrinsicState)
+		input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor)
 	
 		time3<-proc.time()[[3]]
 		genTimes<-c(time.per.gen, time3)
@@ -1065,7 +1066,7 @@ if (dataGenerationStep > 0){ #has completeted the first run
 							newparticleList[[1]]<-mutateStates(newparticleList[[1]], startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, standardDevFactor)
 							#cat("dput(newparticleList[[1]]) AFTER MUTATE STATES\n")
 							#dput(newparticleList[[1]])
-							
+							boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)
 							newparticleList[[1]]$distance<-abcDistance(trueFreeValuesMatrix, whichVip, boxcoxOriginalSummaryStats, rbind(boxcoxOneSimSumStats, boxcoxOneSimSumStats))$abcDistances[1] #trueFreeValuesMatrix is used here just for finding dims, not distances.  #silly way around the one-row matrix issue--rbind the same data and then extract the first element.  
 							#dist(matrix(c(boxcoxplsSummary(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), plsResult, boxcoxLambda, boxcoxAddition, whichVip), boxcoxplsOriginalSummaryStats), nrow=2, byrow=TRUE))[1]
 							if (plot) {
@@ -1287,7 +1288,7 @@ if (dataGenerationStep > 0){ #has completeted the first run
 		FinalParamPredictions_CredInt<-CredInt(particleDataFrame)
 		FinalParamPredictions_HPD<-HPD(particleDataFrame)
 
-		input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor, trueStartingState, trueIntrinsicState)
+		input.data<-rbind(jobName, length(phy[[3]]), nrepSim, TreeYears, epsilonProportion, epsilonMultiplier, nStepsPRC, numParticles, standardDevFactor)
 	
 		time3<-proc.time()[[3]]
 		genTimes<-c(time.per.gen, time3)
