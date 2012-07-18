@@ -2,7 +2,7 @@
 ##TreeYears = 1000 if tree is in thousands of years
 
 
-doRun_rej<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingValuesGuess=c(), intrinsicStatesGuess=c(), extrinsicStatesGuess=c(), TreeYears=1e+04, standardDevFactor=0.20, StartSims=NA, jobName=NA, trueStartingState=NA, trueIntrinsicState=NA, abcMethod="rejection", vipthresh=0.8, abcTolerance=0.1, multicore=FALSE, coreLimit=NA) {
+doRun_rej<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingValuesGuess=c(), intrinsicStatesGuess=c(), extrinsicStatesGuess=c(), TreeYears=1e+04, standardDevFactor=0.20, StartSims=NA, jobName=NA, vipthresh=0.8, abcTolerance=0.1, multicore=FALSE, coreLimit=NA, checkpointFile=NULL, checkpointFreq=24) {
 	library(geiger)
 	library(abc)
 	if (!is.binary.tree(phy)) {
@@ -104,8 +104,11 @@ doRun_rej<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues,
 	
 	nrepSim<-StartSims #Used to be multiple tries where nrepSim = StartSims*((2^try)/2).  If initial simulations are not enough, and we need to try again then new analysis will double number of initial simulations
 	cat(paste("Number of simulations set to", nrepSim, "\n"))
-	
-	trueFreeValuesANDSummaryValues<-parallelSimulation(nrepSim, coreLimit, splits, phy, startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, freevector, timeStep, intrinsicFn, extrinsicFn, multicore)
+	if(!is.null(checkpointFile)) {
+		save(list=ls(),file=paste(checkpointFile,".intialsettings.Rsave",sep=""))
+	}
+
+	trueFreeValuesANDSummaryValues<-parallelSimulation(nrepSim, coreLimit, splits, phy, startingPriorsValues, intrinsicPriorsValues, extrinsicPriorsValues, startingPriorsFns, intrinsicPriorsFns, extrinsicPriorsFns, freevector, timeStep, intrinsicFn, extrinsicFn, multicore, checkpointFile, checkpointFreq)
 	
 	#save(trueFreeValuesANDSummaryValues, file="tFVandSV.Rdata")
 	cat("\n\n")
@@ -116,13 +119,13 @@ doRun_rej<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues,
 	trueFreeValuesMatrix<-trueFreeValuesANDSummaryValues[,1:numberParametersFree]
 	summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 
-	res<-boxcoxPlsRejection(summaryValuesMatrix, trueFreeValuesMatrix, phy, traits, vipthresh, abcMethod, abcTolerance)
+	res<-boxcoxPlsRejection(summaryValuesMatrix, trueFreeValuesMatrix, phy, traits, vipthresh, abcTolerance)
 	#save(abcDistancesRaw, abcDistancesRawTotal, abcDistances, abcResults, particleDataFrame, file="")
-	input.data<-rbind(jobName, length(phy[[3]]), timeStep, StartSims, standardDevFactor, abcMethod, abcTolerance)
+	input.data<-rbind(jobName, length(phy[[3]]), timeStep, StartSims, standardDevFactor, abcTolerance)
 print(res)
 	rejectionResults<-vector("list")
 	#names(rejectionResults)<-c("input.data", "PriorMatrix", "phy", "traits")
-
+#save(trueFreeValuesMatrix,res, file="BarbsTestofDistanceCalc2.Rdata")
 	rejectionResults$input.data<-input.data
 	rejectionResults$PriorMatrix<-PriorMatrix
 	rejectionResults$phy<-phy
