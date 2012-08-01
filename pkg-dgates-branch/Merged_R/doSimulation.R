@@ -19,28 +19,23 @@ if (saveHistory) {
 }
 	numberofsteps<-floor(splits[1, 1]/timeStep)
 	mininterval<-min(splits[1:(dim(splits)[1]-1), 1]-splits[2:(dim(splits)[1]), 1])
-	if (numberofsteps<1000) {
-		#warning(paste("You have only ", numberofsteps, " but should probably have a lot more. I would suggest decreasing timeStep to no more than ", splits[1, 1]/1000))
-	}
-	if (floor(mininterval/timeStep)<50) {
-		#warning(paste("You have only ", floor(mininterval/timeStep), " on the shortest interval but should probably have a lot more if you expect change on this branch. I would suggest decreasing timeStep to no more than ", mininterval/50))
-	}
+
 #initial setup
 	timefrompresent=splits[1, 1]
 	taxa<-list(abctaxon(id=splits[1, 3], states=startingValues), abctaxon(id=splits[1, 4], states=startingValues))
 	splits<-splits[2:dim(splits)[1], ] #pop off top value
 	
 #start running
-	while(timefrompresent>0) {
-#print(timefrompresent)
-#speciation if needed
+	while(timefrompresent > 0) {
 		while ((timefrompresent-timeStep)<=splits[1, 1]) { #do speciation. changed from if to while to deal with effectively polytomies
 			originallength<-length(taxa)
 			taxontodelete<-Inf
 			originallength<-length(taxa)
 			taxontodelete<-Inf
-			for (i in 1:originallength) { #need to merge this from my branch still -DG
-				if (taxa[[i]]$id==splits[1, 2]) {
+			#for (i in 1:originallength) { #need to merge this from my branch still -DG
+                        vec<-c(1:originallength)
+                        delfun<-function(i){
+                          if (taxa[[i]]$id==splits[1, 2]) {
 					taxontodelete<-i
 					taxa[[originallength+1]] <- taxa[[i]]
 					taxa[[originallength+2]] <- taxa[[i]]
@@ -48,8 +43,14 @@ if (saveHistory) {
 					taxa[[originallength+1]]$timeSinceSpeciation<-0
 					taxa[[originallength+2]]$id<-splits[1, 4]
 					taxa[[originallength+2]]$timeSinceSpeciation<-0
-				}
+                                        list(taxa,taxontodelete)
+                                      }
 			}
+                        foo<-lapply(vec,delfun)
+                        foo<-foo[!sapply(foo,is.null)]
+                        taxa<-foo[[1]][[1]]
+                        taxontodelete<-foo[[1]][[2]]
+                        
 #cat("taxontodelete = ", taxontodelete)
 			taxa<-taxa[-1*taxontodelete]
 			if(dim(splits)[1]>1) {
