@@ -7,6 +7,8 @@
 
 doRun_prc<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingValuesGuess=c(), intrinsicValuesGuess=c(), extrinsicValuesGuess=c(), TreeYears=1e+04, numParticles=300, standardDevFactor=0.20, StartSims=300, plot=FALSE, epsilonProportion=0.7, epsilonMultiplier=0.7, nStepsPRC=5, jobName=NA, stopRule=FALSE, stopValue=0.05, vipthresh=0.8, multicore=FALSE, coreLimit=NA, startFromCheckpoint=FALSE, checkpointFile=NA) {
 
+#If you want to change the number of generations you run (like run it three generations then decide to run a fourth) you need to update your tolerance vector
+
 if (startFromCheckpoint==FALSE){
 
 if (!is.binary.tree(phy)) {
@@ -184,15 +186,25 @@ summaryValuesMatrix<-trueFreeValuesANDSummaryValues[,-1:-numberParametersFree]
 	
 	epsilonDistance<-quantile(distanceVector, probs=epsilonProportion) #this gives the distance such that epsilonProportion of the simulations starting from a given set of values will be rejected 
 	toleranceVector<-rep(epsilonDistance, nStepsPRC)
+if(nStepsPRC>1){
+	for (step in 2:nStepsPRC) {
+		toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
+	}
+}
 
-	if(nStepsPRC>1){
-		for (step in 2:nStepsPRC) {
-			toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
+
+
+}#if start from checkpoint = FALSE bracket
+
+if (dataGenerationStep==0){
+	if (startFromCheckpoint==TRUE){ #This allows additional generations to checkpoint runs (run find out its not enough, start from checkpoint)
+		toleranceVector<-rep(epsilonDistance, nStepsPRC)
+		if(nStepsPRC>1){
+			for (step in 2:nStepsPRC) {
+				toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
+			}
 		}
 	}
-	dataGenerationStep=1
-}#if start from checkpoint = FALSE bracket
-if (dataGenerationStep==1){
 			#----------------- Find distribution of distances (End) ---------------------
 			
 			#------------------ ABC-PRC (Start) ------------------
@@ -282,7 +294,7 @@ if (dataGenerationStep==1){
 				#c(mean(subset(particleDataFrame, X3>0)[,7:dim(particleDataFrame)[2]])/subset(particleDataFrame, X3>0)[,6])
 			}
 		
-
+			dataGenerationStep<-1
 			save.image(file=paste("WS", jobName, ".Rdata", sep=""))
 			prcResults<-vector("list")
 			prcResults$input.data<-input.data
@@ -297,19 +309,25 @@ if (dataGenerationStep==1){
 			prcResults$whichVip<-whichVip
 			
 			save(prcResults, file=paste("partialResults", jobName, ".txt", sep=""))
-			dataGenerationStep<-1.1
-			} #if datagenerationstep==1
+			} #if datagenerationstep==0 bracket
 			
 		
 			
-if (dataGenerationStep > 1){
-		for (step in 2:nStepsPRC) { #need this to allow checkpointing
-			toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
+if (dataGenerationStep > 0){
+	if (startFromCheckpoint==TRUE){ #This allows additional generations to checkpoint runs (run find out its not enough, start from checkpoint) A bit redundant but still better than before
+		toleranceVector<-rep(epsilonDistance, nStepsPRC)
+		if(nStepsPRC>1){
+			for (step in 2:nStepsPRC) {
+				toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
+			}
 		}
+	}
+
+
   while (dataGenerationStep < nStepsPRC) {
-    dataGenPrint<-ceiling(dataGenerationStep)
-    
-						cat("\n\n\n", "STARTING DATA GENERATION STEP ", dataGenPrint, "\n\n\n")
+
+    						dataGenerationStep<-dataGenerationStep+1
+						cat("\n\n\n", "STARTING DATA GENERATION STEP ", dataGenerationStep, "\n\n\n")
 						start.time<-proc.time()[[3]]
 						particleWeights<-particleWeights/(sum(particleWeights,na.rm=TRUE)) #normalize to one
 						cat("particleWeights\n", particleWeights, "\n\n")
