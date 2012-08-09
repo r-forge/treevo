@@ -8,6 +8,23 @@
 doRun_prc<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingValuesGuess=c(), intrinsicValuesGuess=c(), extrinsicValuesGuess=c(), TreeYears=1e+04, numParticles=300, standardDevFactor=0.20, StartSims=300, plot=FALSE, epsilonProportion=0.7, epsilonMultiplier=0.7, nStepsPRC=5, jobName=NA, stopRule=FALSE, stopValue=0.05, vipthresh=0.8, multicore=FALSE, coreLimit=NA, startFromCheckpoint=FALSE, checkpointFile=NA) {
 
 #If you want to change the number of generations you run (like run it three generations then decide to run a fourth) you need to update your tolerance vector
+#is not the most elegant but works
+
+if (startFromCheckpoint==TRUE){	
+  job<-jobName  
+  steps<-nStepsPRC
+  check<-startFromCheckpoint  
+  load(checkpointFile)
+  startFromCheckpoint<-check  
+  stepdif<-steps-nStepsPRC
+  param.stdev<-rbind(param.stdev,0)
+  rownames(param.stdev)<-paste("Gen", c(1: steps), sep="")
+  weightedMeanParam<-rbind(weightedMeanParam,0)
+  rownames(weightedMeanParam)<-paste("Gen", c(1: steps), sep="")
+  nStepsPRC<-steps
+  jobName<-job
+}
+
 
 if (startFromCheckpoint==FALSE){
 
@@ -192,7 +209,7 @@ if(nStepsPRC>1){
 	}
 }
 
-
+save(list= ls(), file=paste("WS", jobName, ".Rdata", sep=""))
 
 }#if start from checkpoint = FALSE bracket
 
@@ -295,7 +312,7 @@ if (dataGenerationStep==0){
 			}
 		
 			dataGenerationStep<-1
-			save.image(file=paste("WS", jobName, ".Rdata", sep=""))
+			save(list=ls(),file=paste("WS", jobName, ".Rdata", sep=""))
 			prcResults<-vector("list")
 			prcResults$input.data<-input.data
 			prcResults$PriorMatrix<-PriorMatrix
@@ -544,7 +561,7 @@ if (dataGenerationStep > 0){
 							}
 						}	
 						
-						save.image(file=paste("WS", jobName, ".Rdata", sep=""))
+						save(list= ls(),file=paste("WS", jobName, ".Rdata", sep=""))
 						prcResults<-vector("list")
 						prcResults$input.data<-input.data
 						prcResults$PriorMatrix<-PriorMatrix
