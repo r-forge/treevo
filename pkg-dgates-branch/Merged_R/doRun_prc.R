@@ -10,24 +10,8 @@ doRun_prc<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues,
 #If you want to change the number of generations you run (like run it three generations then decide to run a fourth) you need to update your tolerance vector
 #is not the most elegant but works
 
-if (startFromCheckpoint==TRUE){	
-  job<-jobName  
-  steps<-nStepsPRC
-  check<-startFromCheckpoint  
-  load(checkpointFile)
-  startFromCheckpoint<-check  
-  stepdif<-steps-nStepsPRC
-  param.stdev<-rbind(param.stdev,0)
-  rownames(param.stdev)<-paste("Gen", c(1: steps), sep="")
-  weightedMeanParam<-rbind(weightedMeanParam,0)
-  rownames(weightedMeanParam)<-paste("Gen", c(1: steps), sep="")
-  nStepsPRC<-steps
-  jobName<-job
-}
-
 
 if (startFromCheckpoint==FALSE){
-
 if (!is.binary.tree(phy)) {
 	print("Warning: Tree is not fully dichotomous")
 }
@@ -213,16 +197,32 @@ save(list= ls(), file=paste("WS", jobName, ".Rdata", sep=""))
 
 }#if start from checkpoint = FALSE bracket
 
-if (dataGenerationStep==0){
-	if (startFromCheckpoint==TRUE){ #This allows additional generations to checkpoint runs (run find out its not enough, start from checkpoint)
-		toleranceVector<-rep(epsilonDistance, nStepsPRC)
-		if(nStepsPRC>1){
-			for (step in 2:nStepsPRC) {
-				toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
-			}
-		}
+if (startFromCheckpoint){	
+  job<-jobName  
+  steps<-nStepsPRC
+  check<-startFromCheckpoint  
+  load(checkpointFile)  
+  startFromCheckpoint<-check  
+  stepdif<-c(1:(steps-nStepsPRC))
+  for (x in stepdif){
+    param.stdev<-rbind(param.stdev,0)
+    weightedMeanParam<-rbind(weightedMeanParam,0)
+  }
+  rownames(param.stdev)<-paste("Gen", c(1: steps), sep="")
+  rownames(weightedMeanParam)<-paste("Gen", c(1: steps), sep="")
+  nStepsPRC<-steps
+  jobName<-job
+  toleranceVector<-rep(epsilonDistance, nStepsPRC)
+  if(nStepsPRC>1){
+	for (step in 2:nStepsPRC) {
+		toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
 	}
-			#----------------- Find distribution of distances (End) ---------------------
+  }
+		
+}
+
+if (dataGenerationStep==0){
+	#----------------- Find distribution of distances (End) ---------------------
 			
 			#------------------ ABC-PRC (Start) ------------------
 			#do not forget to use boxcoxLambda, and plsResult when computing distances
@@ -330,16 +330,6 @@ if (dataGenerationStep==0){
 			
 		
 			
-if (dataGenerationStep > 0){
-	if (startFromCheckpoint==TRUE){ #This allows additional generations to checkpoint runs (run find out its not enough, start from checkpoint) A bit redundant but still better than before
-		toleranceVector<-rep(epsilonDistance, nStepsPRC)
-		if(nStepsPRC>1){
-			for (step in 2:nStepsPRC) {
-				toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
-			}
-		}
-	}
-
 
   while (dataGenerationStep < nStepsPRC) {
 
@@ -574,8 +564,7 @@ if (dataGenerationStep > 0){
 						prcResults$time.per.gen<-time.per.gen
 						prcResults$whichVip<-whichVip
 						
-						#save(prcResults, file=paste("partialResults", jobName, ".txt", sep=""))
-					dataGenerationStep<-dataGenerationStep+1	
+						#save(prcResults, file=paste("partialResults", jobName, ".txt", sep=""))	
 					} #while (dataGenerationStep < nStepsPRC) bracket
 			
 		
@@ -621,6 +610,5 @@ if (dataGenerationStep > 0){
 
 	registerDoMC(1) #set number of cores back to 1
 	print(prcResults)
-}#if datagenerationstep>1 bracket
 }
 	#------------------ ABC-PRC (end) ------------------
