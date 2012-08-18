@@ -6,8 +6,6 @@
 
 doRun_prc<-function(phy, traits, intrinsicFn, extrinsicFn, startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns, startingValuesGuess=c(), intrinsicValuesGuess=c(), extrinsicValuesGuess=c(), TreeYears=1e+04, numParticles=300, standardDevFactor=0.20, StartSims=300, plot=FALSE, epsilonProportion=0.7, epsilonMultiplier=0.7, nStepsPRC=5, jobName=NA, stopRule=FALSE, stopValue=0.05, vipthresh=0.8, multicore=FALSE, coreLimit=NA, startFromCheckpoint=FALSE, checkpointFile=NA) {
 
-#If you want to change the number of generations you run (like run it three generations then decide to run a fourth) you need to update your tolerance vector
-#is not the most elegant but works
 
 
 if (startFromCheckpoint==FALSE){
@@ -196,23 +194,25 @@ if (startFromCheckpoint==FALSE){
 
 }#if start from checkpoint = FALSE bracket
 
-if (startFromCheckpoint){	#DJG# all start from checkpoint maneuvering here
-  job<-jobName #DJG# the way checkpointing loads it will overwrite your arguments with the old ones, so I assign new ones of importance a name here to preserve them  
-  steps<-nStepsPRC #DJG# allows you to add more steps if you want
-  check<-startFromCheckpoint #DJG# its no good if you load the workspace and it changes your startFromCheckpoint to false 
+#DJG# start from checkpoint works but loading the saved workspace will overwrite arguments you've most recently made, so I pick out the three that would probably be the most important: the jobname so you save to a new workspace, nStepsPRC so you can add generations, and startFromCheckpoint because you don't want that immediately turning off. It may be worth it to add more arguments like multicore or number of particles but for now those are determined by your saved workspace
+
+if (startFromCheckpoint){	
+  job<-jobName 
+  steps<-nStepsPRC 
+  check<-startFromCheckpoint 
   load(checkpointFile)  
   startFromCheckpoint<-check  
-  stepdif<-c(1:(steps-nStepsPRC)) #DJG# This is also to allow you to add additional generations and start it up again...
-  for (x in stepdif){
-    param.stdev<-rbind(param.stdev,0) #DJG# These two I think are the only two 
+  stepdif<-c(1:(steps-nStepsPRC)) 
+  for (x in stepdif){ #DJG# this is only if you're adding more generations  
+    param.stdev<-rbind(param.stdev,0) 
     weightedMeanParam<-rbind(weightedMeanParam,0)
   }
   rownames(param.stdev)<-paste("Gen", c(1: steps), sep="")
   rownames(weightedMeanParam)<-paste("Gen", c(1: steps), sep="")
-  nStepsPRC<-steps #DJG# now updating the nSteps, jobName, and toleranceVector, might also want to add any other arguments you may want to change from the original file like multicore, but these three were the bigggest I could forsee
+  nStepsPRC<-steps 
   jobName<-job
   toleranceVector<-rep(epsilonDistance, nStepsPRC)
-  if(nStepsPRC>1){
+  if(nStepsPRC>1){ #DJG# just remaking the tolerance vector here
     for (step in 2:nStepsPRC) {
       toleranceVector[step]<-toleranceVector[step-1]*epsilonMultiplier
     }
@@ -249,8 +249,8 @@ if (dataGenerationStep==0){
   particleList<-list()
 			
   while (particle<=numParticles) { 
-    #attempts<-attempts+1
-    particleFn<-function(){ #DJG# function that allows for parallelization, just does the simulation step in here and returns as many particles as you have cores (makes one particle per core)
+    #DJG# This is the function that allows for parallelization of the particle steps. Instead of doing a single simulation then running that particle through the particle acceptance step it does however many cores you have worth of particles then runs the list through the subsequent steps. The particle simulation step is the time intensive step so it at least allows for that to be done in parallel.
+    particleFn<-function(){ 
       newparticleList<-list(abcparticle(id=particle, generation=1, weight=0))
       newparticleList[[1]]<-initializeStatesFromMatrices(newparticleList[[1]], startingPriorsValues, startingPriorsFns, intrinsicPriorsValues, intrinsicPriorsFns, extrinsicPriorsValues, extrinsicPriorsFns)
       boxcoxOneSimSumStats<-boxcoxTransformation(summaryStatsLong(phy, convertTaxonFrameToGeigerData(doSimulation(splits, intrinsicFn, extrinsicFn, newparticleList[[1]]$startingValues, newparticleList[[1]]$intrinsicValues, newparticleList[[1]]$extrinsicValues, timeStep), phy)), boxcoxAddition, boxcoxLambda)
@@ -259,9 +259,10 @@ if (dataGenerationStep==0){
       #newparticleList[[1]]$distance<-dist(matrix(c(boxcoxplsSummary(oneSimSumStats, plsResult, boxcoxLambda, boxcoxAddition, whichVip), boxcoxplsOriginalSummaryStats), nrow=2, byrow=TRUE))[1]
       return(newparticleList[[1]])
     }
-    listpartvec<-foreach(1:coreLimit) %dopar% particleFn() #DJG# the foreach function, could be made an mclapply or a parLapply function (if you wanted to run parallel on Windows)
+    #DJG# the foreach function which is your actual parallelization. This could be made an mclapply or a parLapply function (if you wanted to run parallel on Windows) very easily but would require some different registering of cores.
+    listpartvec<-foreach(1:coreLimit) %dopar% particleFn() 
 
-    for(newparticleList in listpartvec){  #DJG# now the particle acceptance steps but looped for however many particles you made earlier
+    for(newparticleList in listpartvec){  #DJG# this is the particle acceptance step but if multicore=TRUE you're feeding it a list of particles instead of a single particle. Check out McCallum and Weston's book Parallel R for more details
       attempts<-attempts+1
                                 
       if (is.na(newparticleList$distance)) {
@@ -338,7 +339,8 @@ while (dataGenerationStep < nStepsPRC) {
   particleList<-list()
   weightScaling=0;
   while (particle<=numParticles) {
-    particleFun<-function(){ #DJG# again the function to run in parallel 
+    #DJG# This is function to allow for running in parallel again
+    particleFun<-function(){ 
       particleToSelect<-which.max(as.vector(rmultinom(1, size = 1, prob=oldParticleWeights)))
       #cat("particle to select = ", particleToSelect, "\n")
       #cat("dput(oldParticleList)\n")
@@ -369,11 +371,12 @@ while (dataGenerationStep < nStepsPRC) {
         }
         text(x=newparticleList[[1]]$intrinsicValues, y=newparticleList[[1]]$distance, labels= dataGenerationStep, col=plotcol) 
       }
-      return(list(newparticleList[[1]],particleToSelect)) #DJG# here I need two things back so need to split this list (see below)
+      return(list(newparticleList[[1]],particleToSelect)) #DJG# here I need two things back from this function newparticleList and particleToSelect
     }
     listPartVecs<- foreach (1:coreLimit) %dopar% particleFun()
-    lPVfun<- function(x) return(x[[1]]) #DJG# pulls out the particlevecs
-    pTSfun<-function(y) return(y[[2]]) #DJG# pulls out particleToSelect info
+    #DJG# since I'm returning two important items I need to split the list 
+    lPVfun<- function(x) return(x[[1]]) 
+    pTSfun<-function(y) return(y[[2]]) 
     newparticleList<-lapply(listPartVecs,lPVfun)
     particlesToSelect<-lapply(listPartVecs,pTSfun)
     for (x in 1:length(newparticleList)){ #DJG# again iterate through the particles you've created above
